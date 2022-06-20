@@ -1,6 +1,6 @@
 # Kafka performance tester
 
-Original Kafka performance tester modified by Jukka Markkanen 2022
+Original Kafka performance tester (https://kafka.apache.org/downloads) modified by Jukka Markkanen 2022
 
 ## Run kafka cluster
 
