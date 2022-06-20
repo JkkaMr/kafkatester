@@ -1,0 +1,4 @@
+FROM openjdk:8
+ADD target/kafka-tester-producer-jar-with-dependencies.jar kafka-tester-producer.jar
+ENTRYPOINT ["java", "-jar","kafka-tester-producer.jar"]
+EXPOSE 8080
