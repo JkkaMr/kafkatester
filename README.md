@@ -11,7 +11,7 @@ docker-compose up
 
 Create topic (with latest kafka sources found at https://kafka.apache.org/downloads):
 ```
-./kafka_2.13-3.1.0/bin/kafka-topics.sh --bootstrap-server localhost:29092 --create --replication-factor 3 --partitions 9 --topic perftest
+./kafka_2.13-3.4.0/bin/kafka-topics.sh --bootstrap-server localhost:29092 --create --replication-factor 3 --partitions 9 --topic perftest
 ```
 
 ## Build
@@ -45,5 +45,5 @@ mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ConsumerTester" -Dexec.args="
 
 Producer (after consumer start up)
 ```
-mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.exactly.properties --topic perftest --num-records 100000 --throughput -1 --record-size 128 --transaction-duration-ms 1000"
+mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.exactly.properties --topic perftest --num-records 100000 --throughput -1 --transactional-id test-producer --record-size 128 --transaction-duration-ms 1000"
 ```

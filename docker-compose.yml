@@ -101,9 +101,3 @@ services:
     #volumes: 
     #  - ./tmp/kafka3/data:/var/lib/kafka/data
     #  - ./tmp/kafka3/secrets:/etc/kafka/secrets
-  #kafka-tester-producer:
-  #  image: kafka-tester-producer:latest
-  #  depends_on:
-  #    - kafka-1
-  #    - kafka-2
-  #    - kafka-3

@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
 public class ConsumerTester {
 
@@ -66,8 +68,6 @@ public class ConsumerTester {
     Long batchStartTime = Long.MAX_VALUE;
     Long timeFromBatchStartTime = 0L;
 
-    // TODO: add percentile calculations
-
     try {
       while (true) {
         ConsumerRecords<byte[], byte[]> records = consumer.poll(Duration.ofMillis(100));
@@ -92,10 +92,34 @@ public class ConsumerTester {
             long duplicateRecords = idCount - uniqueIdCount;
             long droppedRecords = batchSize - uniqueIdCount;
             double avgLatency = latencies.stream().mapToDouble(a -> a).average().orElse(0d);
+            long percentile90 = percentile(latencies, 90l);
+            long percentile95 = percentile(latencies, 95l);
+            long percentile99 = percentile(latencies, 99l);
             int recordSize = record.serializedValueSize();
-            double throughput = (((double)idCount * (double)recordSize) / (double)timeFromBatchStartTime) / 1000d;
+            
+            double throughput = 1000.0 * ((double)idCount * (double)recordSize) / (double) timeFromBatchStartTime / (1024.0 * 1024.0);
 
-            System.out.printf("Last batch %s stats: avg latency %s, dropped records %d, duplicate records %d, total time %s, throughput %s%n", lastBatchId, avgLatency + " ms", droppedRecords, duplicateRecords, timeFromBatchStartTime, throughput + " MB/s");
+            /* For CSV
+            System.out.printf(
+              "%.2f;%d;%.2f%n",
+              avgLatency,
+              percentile95,
+              throughput
+            );
+            */
+
+            System.out.printf(
+              "Last batch %s stats: avg latency %s, 90 percentile %s, 95 percentile %s, 99 percentile %s, dropped records %d, duplicate records %d, total time %s, throughput %s%n",
+              lastBatchId,
+              avgLatency + " ms",
+              percentile90 + " ms",
+              percentile95 + " ms",
+              percentile99 + " ms",
+              droppedRecords,
+              duplicateRecords,
+              timeFromBatchStartTime,
+              throughput + " MB/s"
+            );
 
             recordIds.clear();
             latencies.clear();
@@ -114,6 +138,11 @@ public class ConsumerTester {
     }
   }
 
+  public static long percentile(List<Long> latencies, double percentile) {
+    int index = (int) Math.ceil(percentile / 100.0 * latencies.size());
+    List<Long> sortedLatencies = latencies.stream().sorted().collect(Collectors.toList());
+    return sortedLatencies.get(index-1);
+  }
 
   public static Properties loadConfig(String configFile) throws IOException {
     if (!Files.exists(Paths.get(configFile))) {
