@@ -1,6 +1,6 @@
 /**
  * Copyright 2020 Confluent Inc.
- * Modifications Copyright 2022 Jukka Markkanen <juvimark@student.jyu.fi>
+ * Modifications Copyright 2023 Jukka Markkanen <juvimark@student.jyu.fi>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package com.juvimark.gradu;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 public class ConsumerTester {
@@ -67,6 +68,7 @@ public class ConsumerTester {
     String lastBatchId = null;
     Long batchStartTime = Long.MAX_VALUE;
     Long timeFromBatchStartTime = 0L;
+    File csvFile = new File("./target/consumerlogs.csv");;
 
     try {
       while (true) {
@@ -99,14 +101,17 @@ public class ConsumerTester {
             
             double throughput = 1000.0 * ((double)idCount * (double)recordSize) / (double) timeFromBatchStartTime / (1024.0 * 1024.0);
 
-            /* For CSV
-            System.out.printf(
-              "%.2f;%d;%.2f%n",
+            String toWriteCSV = String.format("%s;%.2f;%d;%.2f%n",
+              lastBatchId,
               avgLatency,
               percentile95,
               throughput
             );
-            */
+
+            // Write CSV
+            try {
+                FileUtils.writeStringToFile(csvFile, toWriteCSV, StandardCharsets.UTF_8, true);
+            } catch(Exception e) {}
 
             System.out.printf(
               "Last batch %s stats: avg latency %s, 90 percentile %s, 95 percentile %s, 99 percentile %s, dropped records %d, duplicate records %d, total time %s, throughput %s%n",

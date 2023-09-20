@@ -24,6 +24,18 @@ mvn clean package
 ## Run testers
 Different semantics can not be run at the same time
 
+### At most once
+
+Consumer:
+```
+mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ConsumerTester" -Dexec.args="./kafkaconfigs/consumer.atmost.properties perftest"
+```
+
+Producer (after consumer start up)
+```
+mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.atmost.properties --topic perftest --num-records 100000 --throughput -1 --record-size <RECORD SIZE>"
+```
+
 ### At least once
 
 Consumer:
@@ -33,7 +45,7 @@ mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ConsumerTester" -Dexec.args="
 
 Producer (after consumer start up)
 ```
-mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.atleast.properties --topic perftest --num-records 100000 --throughput -1 --record-size 128"
+mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.atleast.properties --topic perftest --num-records 100000 --throughput -1 --record-size <RECORD SIZE>"
 ```
 
 ### Exactly once
@@ -45,5 +57,5 @@ mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ConsumerTester" -Dexec.args="
 
 Producer (after consumer start up)
 ```
-mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.exactly.properties --topic perftest --num-records 100000 --throughput -1 --transactional-id test-producer --record-size 128 --transaction-duration-ms 1000"
+mvn exec:java -Dexec.mainClass="com.juvimark.gradu.ProducerTester" -Dexec.args="--producer.config ./kafkaconfigs/producer.exactly.properties --topic perftest --num-records 100000 --throughput -1 --transactional-id test-producer --record-size <RECORD SIZE> --transaction-duration-ms <TRANSACTION MS>"
 ```

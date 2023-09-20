@@ -1,6 +1,6 @@
 /**
  * https://github.com/apache/kafka
- * Modifications Copyright 2022 Jukka Markkanen <juvimark@student.jyu.fi>
+ * Modifications Copyright 2023 Jukka Markkanen <juvimark@student.jyu.fi>
  * 
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with
@@ -23,6 +23,7 @@ package com.juvimark.gradu;
 import static net.sourceforge.argparse4j.impl.Arguments.store;
 import static net.sourceforge.argparse4j.impl.Arguments.storeTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -32,9 +33,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.Arrays;
 
 import net.sourceforge.argparse4j.inf.MutuallyExclusiveGroup;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -107,7 +111,7 @@ public class ProducerTester {
 
             int currentTransactionSize = 0;
             long transactionStartTime = 0;
-            long batchId = Math.round(Math.random() * Integer.MAX_VALUE);
+            long batchId = ThreadLocalRandom.current().nextInt(100000, 999999 + 1);
 
             ThroughputThrottler throttler = new ThroughputThrottler(throughput, startMs);
 
@@ -144,6 +148,7 @@ public class ProducerTester {
                 producer.close();
 
                 /* print final results */
+                stats.printCSV(batchId);
                 stats.printTotal();
             } else {
                 // Make sure all messages are sent before printing out the stats and the metrics
@@ -154,6 +159,7 @@ public class ProducerTester {
                 producer.flush();
 
                 /* print final results */
+                stats.printCSV(batchId);
                 stats.printTotal();
 
                 /* print out metrics */
@@ -369,6 +375,7 @@ public class ProducerTester {
         private long windowTotalLatency;
         private long windowBytes;
         private long reportingInterval;
+        private File csvFile;
 
         public Stats(long numRecords, int reportingInterval) {
             this.start = System.currentTimeMillis();
@@ -385,6 +392,7 @@ public class ProducerTester {
             this.windowBytes = 0;
             this.totalLatency = 0;
             this.reportingInterval = reportingInterval;
+            this.csvFile = new File("./target/producerlogs.csv");
         }
 
         public void record(int iter, int latency, int bytes, long time) {
@@ -434,20 +442,27 @@ public class ProducerTester {
             this.windowBytes = 0;
         }
 
+        public void printCSV(long batchId) {
+            long elapsed = System.currentTimeMillis() - start;
+            double mbPerSec = 1000.0 * this.bytes / (double) elapsed / (1024.0 * 1024.0);
+            int[] percs = percentiles(this.latencies, index, 0.5, 0.95, 0.99, 0.999);
+
+            String toWrite = String.format("%s;%.2f;%d;%.2f%n",
+                    batchId,
+                    totalLatency / (double) count,
+                    percs[1],
+                    mbPerSec);
+
+            try {
+                FileUtils.writeStringToFile(csvFile, toWrite, StandardCharsets.UTF_8, true);
+            } catch(Exception e) {}
+        }
+
         public void printTotal() {
             long elapsed = System.currentTimeMillis() - start;
             double recsPerSec = 1000.0 * count / (double) elapsed;
             double mbPerSec = 1000.0 * this.bytes / (double) elapsed / (1024.0 * 1024.0);
             int[] percs = percentiles(this.latencies, index, 0.5, 0.95, 0.99, 0.999);
-
-            /** For CSV */
-            /*
-            System.out.printf(
-                    "%.2f;%d;%.2f%n",
-                    totalLatency / (double) count,
-                    percs[1],
-                    mbPerSec);
-                    */
 
             System.out.printf(
                     "%d records sent, %f records/sec (%.2f MB/sec), %.2f ms avg latency, %.2f ms max latency, %d ms 50th, %d ms 95th, %d ms 99th, %d ms 99.9th.%n",
